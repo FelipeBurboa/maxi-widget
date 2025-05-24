@@ -3,15 +3,25 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
+
+# Set permissions for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Setup Node.js
@@ -23,17 +33,23 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Build
+    - name: Build application
       run: npm run build
       env:
+        # Add your environment variables here if needed
         VITE_STREAMELEMENTS_ENABLED: ${{ secrets.VITE_STREAMELEMENTS_ENABLED }}
         VITE_STREAMELEMENTS_JWT_TOKEN: ${{ secrets.VITE_STREAMELEMENTS_JWT_TOKEN }}
         VITE_STREAMELEMENTS_CHANNEL_ID: ${{ secrets.VITE_STREAMELEMENTS_CHANNEL_ID }}
         VITE_STREAMELEMENTS_TEST_MODE: ${{ secrets.VITE_STREAMELEMENTS_TEST_MODE }}
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload build artifacts
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
+        path: './dist'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
