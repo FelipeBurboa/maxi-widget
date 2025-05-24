@@ -2,16 +2,14 @@
   "name": "obs-donation-widget",
   "private": true,
   "version": "0.0.0",
-  "homepage": "https://FelipeBurboa.github.io/maxi-widget",
+  "homepage": "https://FelipeBurboa.github.io/maxi-widget/",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:obs": "npm run build && echo 'Widget built! Use dist/index.html in OBS'",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "build:obs": "npm run build && echo 'Widget built! Use dist/index.html in OBS'"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.7",

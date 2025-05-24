@@ -18,5 +18,5 @@ export default defineConfig({
       },
     },
   },
-  base: "/maxi-widget",
+  base: "/maxi-widget/",
 });
