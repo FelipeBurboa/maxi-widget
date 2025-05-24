@@ -13,11 +13,48 @@ const App: React.FC = () => {
   const hasInitialAmountParam = initialAmountParam !== null;
 
   const [state, setState] = useState<DonationGoalState>(() => {
-    // If initialAmount is provided in URL, clear localStorage and start fresh
-    if (hasInitialAmountParam) {
-      console.log("🔄 Initial amount detected in URL, clearing saved progress");
-      localStorage.removeItem("donation-progress");
+    const saved = localStorage.getItem("donation-progress");
 
+    // If initialAmount is provided in URL, check if we need to reset
+    if (hasInitialAmountParam) {
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Check if the saved initialAmount matches the current URL parameter
+          const savedInitialAmount = parsed.initialAmount || 0;
+          const currentInitialAmount = parseInt(initialAmountParam || "0");
+
+          // If they match, load the saved progress
+          if (savedInitialAmount === currentInitialAmount) {
+            console.log(
+              "📊 Loading existing progress for initial amount:",
+              currentInitialAmount
+            );
+            return {
+              currentAmount: parsed.currentAmount || config.initialAmount,
+              goalAmount: config.goalAmount,
+              lastDonation: null,
+              showNotification: false,
+              isConnected: false,
+              donations: parsed.donations || [],
+            };
+          } else {
+            // Different initial amount, clear and start fresh
+            console.log(
+              "🔄 Different initial amount detected, clearing saved progress"
+            );
+            localStorage.removeItem("donation-progress");
+          }
+        } catch (e) {
+          console.error("Failed to parse saved donation data");
+          localStorage.removeItem("donation-progress");
+        }
+      }
+
+      console.log(
+        "🆕 Starting fresh with initial amount:",
+        config.initialAmount
+      );
       return {
         currentAmount: config.initialAmount,
         goalAmount: config.goalAmount,
@@ -28,13 +65,12 @@ const App: React.FC = () => {
       };
     }
 
-    // Load saved state from localStorage only if no initialAmount in URL
-    const saved = localStorage.getItem("donation-progress");
+    // No initialAmount in URL, load saved state normally
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         return {
-          currentAmount: parsed.currentAmount || config.initialAmount,
+          currentAmount: parsed.currentAmount || 0,
           goalAmount: config.goalAmount,
           lastDonation: null,
           showNotification: false,
@@ -47,7 +83,7 @@ const App: React.FC = () => {
     }
 
     return {
-      currentAmount: config.initialAmount,
+      currentAmount: 0,
       goalAmount: config.goalAmount,
       lastDonation: null,
       showNotification: false,
@@ -78,20 +114,18 @@ const App: React.FC = () => {
     [config.notificationDuration]
   );
 
-  // Save progress to localStorage whenever it changes (but not if initialAmount was provided)
+  // Save progress to localStorage whenever it changes
   useEffect(() => {
-    // Only save to localStorage if we didn't start with an initialAmount parameter
-    if (!hasInitialAmountParam) {
-      localStorage.setItem(
-        "donation-progress",
-        JSON.stringify({
-          currentAmount: state.currentAmount,
-          donations: state.donations,
-          lastUpdated: new Date().toISOString(),
-        })
-      );
-    }
-  }, [state.currentAmount, state.donations, hasInitialAmountParam]);
+    localStorage.setItem(
+      "donation-progress",
+      JSON.stringify({
+        currentAmount: state.currentAmount,
+        donations: state.donations,
+        initialAmount: config.initialAmount, // Save the initial amount for comparison
+        lastUpdated: new Date().toISOString(),
+      })
+    );
+  }, [state.currentAmount, state.donations, config.initialAmount]);
 
   const { connectionError, testDonation } = useStreamElements({
     jwtToken: config.streamElements.jwtToken,
@@ -174,11 +208,11 @@ const App: React.FC = () => {
       )}
 
       {/* Debug info - remove in production */}
-      {hasInitialAmountParam && (
+      {/*  {hasInitialAmountParam && (
         <div className="absolute top-2 right-2 bg-blue-500/20 border border-blue-500/50 rounded px-2 py-1 text-xs text-blue-400">
           Started with initial: ${config.initialAmount}
         </div>
-      )}
+      )} */}
 
       {/* Main Widget Container with Animated Borders */}
       <div
